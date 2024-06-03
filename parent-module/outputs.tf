@@ -1,5 +1,5 @@
 output "resource_names" {
-  description = "The generated resource names."
-  value       = { for k, v in module.naming_modules : k => v.resource_name }
+  description = "A map of base names to generated resource names"
+  value       = { for k, v in var.resources : k => module.naming_module[k].resource_name }
 }
 
