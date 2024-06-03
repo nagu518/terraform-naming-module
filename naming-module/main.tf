@@ -1,38 +1,36 @@
-resource "null_resource" "generate_name" {
-  count = 1
+locals {
+  truncated_base_name = substr(var.base_name, 0, 15 - 7)  # 15 minus length of "vm-" and "-00"
+}
 
-  provisioner "local-exec" {
-    command = <<EOT
-      base_name="${var.base_name}"
-      resource_type="${var.resource_type}"
+resource "null_resource" "resource_name" {
+  count = var.resource_type == "virtual_machine" ? 1 : 0
 
-      case "$resource_type" in
-        "virtual_machine")
-          prefix="vm-"
-          suffix="-00"
-          max_length=15
-          total_length=$((${#prefix} + ${#suffix}))
-          available_length=$((max_length - total_length))
-          if [ ${#base_name} -gt $available_length ]; then
-            base_name=${base_name:0:$available_length}
-          fi
-          resource_name="${prefix}${base_name}${suffix}"
-          ;;
-        "key_vault")
-          resource_name="kv-${base_name,,}"
-          ;;
-        "storage_account")
-          resource_name="sa${base_name//-/}"
-          resource_name="${resource_name,,}"
-          ;;
-      esac
+  triggers = {
+    resource_name = format("vm-%s-00", local.truncated_base_name)
+  }
+}
 
-      echo $resource_name > generated_name.txt
-    EOT
+resource "null_resource" "key_vault_name" {
+  count = var.resource_type == "key_vault" ? 1 : 0
+
+  triggers = {
+    resource_name = format("kv-%s", lower(var.base_name))
+  }
+}
+
+resource "null_resource" "storage_account_name" {
+  count = var.resource_type == "storage_account" ? 1 : 0
+
+  triggers = {
+    resource_name = format("sa%s", replace(lower(var.base_name), "-", ""))
   }
 }
 
 output "resource_name" {
-  value = chomp(file("${path.module}/generated_name.txt"))
+  value = coalesce(
+    try(null_resource.resource_name[0].triggers.resource_name, null),
+    try(null_resource.key_vault_name[0].triggers.resource_name, null),
+    try(null_resource.storage_account_name[0].triggers.resource_name, null)
+  )
 }
 
