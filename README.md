@@ -65,6 +65,17 @@ Navigate to the `example_usage` directory and run the following commands:
     
     terraform output
     
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+generated_resource_names = {
+  "my-keyvault" = "kv-my-keyvault"
+  "myResource1" = "vm-myResource1-00"
+  "storage-example" = "sastorageexample"
+}
+This output shows the generated resource names based on the base_name and resource_type provided in the resources map.
+
 
 ### Cleaning Up
 
